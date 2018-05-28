@@ -1,10 +1,9 @@
 # Maryland_Crash
 Maryland Crash Analysis - Predicting the probability of accidents on a given segment on a given time. This prediction can be used as an input to get safest route and to optimize ambulance car allocation.
-# Data Cleaning and Aggregation files
-- MRCA_Data_Aggregation.Rmd
-- MRCA_Data_Cleaning_Formatting.Rmd
-# Data pre-processing and modelling files
-- MRCA_ML.ipynb
+# Files 
+- MRCA_Data_Aggregation.Rmd (Data Cleaning and Aggregation)
+- MRCA_Data_Cleaning_Formatting.Rmd (Data Cleaning and Aggregation)
+- MRCA_ML.ipynb (Data pre-processing and modelling)
 
 # Overview
 
