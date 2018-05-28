@@ -1,0 +1,416 @@
+---
+title: "Maryland Road Crash Analysis: Data Cleaning and Formatting"
+author: "Arpit Jayesh Vora"
+date: "21 April 2018"
+output: html_document
+---
+
+## Overview
+- Splitting the data files into multiple files was done in Excel.
+- Merging Person and Circum_Person for each quarter and then appending into single file containing all data for year 2016.
+- Similarly, repeating the process for all other files.Finally merging all files to create a data framewhich contains all the attributes in different files for the year 2016.
+- Cleaning and formating the values of different attributes. Replacing NA's in the data set.
+- Derived some attributes with a hypothesis that may support the analysis for accidents in state.
+
+## Merging Vehicle Data: 
+
+- Merging the Vehicle and Vehicle_Circum files for all the quarter and then appending all quaters to make a final file as Vehicle2016.csv
+
+```{r,eval=FALSE}
+library(readxl)
+require(sqldf)
+#-----------------------qtr 1----------------------------------------------
+VEHICLE <- read_excel("crashQtr1/VEHICLE.xlsx")
+CIRCUM_VEHICLE <- read_excel("crashQtr1/CIRCUM_VEHICLE.xlsx")
+mergeVehicle<- sqldf("select * from VEHICLE inner join CIRCUM_VEHICLE using (REPORT_NO,VEHICLE_ID)")
+
+#-----------------------qtr 2---------------------------------------------
+VEHICLE <- read_excel("crashQtr2/VEHICLE.xlsx")
+CIRCUM_VEHICLE <- read_excel("crashQtr2/CIRCUM_VEHICLE.xlsx")
+mergeVehicle2<- sqldf("select * from VEHICLE inner join CIRCUM_VEHICLE using (REPORT_NO,VEHICLE_ID)")
+
+#-----------------------qtr 3---------------------------------------------
+VEHICLE <- read_excel("crashQtr3/VEHICLE.xlsx")
+CIRCUM_VEHICLE <- read_excel("crashQtr3/CIRCUM_VEHICLE.xlsx")
+mergeVehicle3<- sqldf("select * from VEHICLE inner join CIRCUM_VEHICLE using (REPORT_NO,VEHICLE_ID)")
+
+#-----------------------qtr 4---------------------------------------------
+VEHICLE <- read_excel("crashQtr4/VEHICLE.xlsx")
+CIRCUM_VEHICLE <- read_excel("crashQtr4/CIRCUM_VEHICLE.xlsx")
+mergeVehicle4<- sqldf("select * from VEHICLE inner join CIRCUM_VEHICLE using (REPORT_NO,VEHICLE_ID)")
+
+#-------------merging all qtr for vehicle--------------------------------------------------
+v1 <- rbind(mergeVehicle,mergeVehicle2)
+v2<- rbind(v1,mergeVehicle3)
+Vehicle2016 <- rbind(v2,mergeVehicle4)
+```
+
+- Cleaning of Vehicle2016 file to make it cosistent throughout. For example veh_make = 'Hinda', which does not make any sense. Hence, was change into 'Honda'. A quick snapshot of cleaning:
+```{r,eval=FALSE}
+table(mergeVehicle$VEH_MAKE)
+mergeVehicle <- Vehicle2016
+mergeVehicle$VEH_MAKE <- sub('TO.*','TOYOTA',mergeVehicle$VEH_MAKE)
+mergeVehicle$VEH_MAKE <- sub('HO.*','HONDA',mergeVehicle$VEH_MAKE)
+mergeVehicle$VEH_MAKE <- sub('HI.*','HONDA',mergeVehicle$VEH_MAKE)
+mergeVehicle$VEH_MAKE <- sub('Han.*','HONDA',mergeVehicle$VEH_MAKE)
+mergeVehicle$VEH_MAKE <- sub('JEEP.*','JEEP',mergeVehicle$VEH_MAKE)
+mergeVehicle$VEH_MAKE <- sub('MERCE.*','MERCEDES',mergeVehicle$VEH_MAKE)
+```
+- Similar cleaning was done for top 15 Vehicle make and model.
+
+## Merging Crash Data:
+- Firstly, the date and time attribute were split into Day, Month, Year and Hours, Mins, Seconds respectively. This was done to analyse the accidents on a fine granularity level. 
+- For quarter #4, Acc_Date was in different format (YYYY-MM-DD) also, Acc_Time had some junk value which was removed.
+- Hypothesis can be made that #accidents are at peak during 8AM and 5PM
+```{r,eval=FALSE}
+#read all files
+library(readxl)
+Crash_Qtr01 <- read_excel("Crash_Qtr01_2016.xlsx")
+Crash_Qtr02 <- read_excel("crashQtr2/CRASH.xlsx")
+Crash_Qtr03 <- read_excel("crashQtr3/CRASH.xlsx")
+Crash_Qtr04 <- read_excel("crashQtr4/CRASH.xlsx")
+
+# splitting date and time
+#similarly is done for all quarter
+require(data.table)
+dt=as.data.table(Crash_Qtr01)
+dt[,c("acc_month","acc_day", "acc_year") := tstrsplit(Crash_Qtr01$ACC_DATE,"-",fixed=TRUE)]
+dt[,c("acc_hour","acc_min", "acc_sec") := tstrsplit(Crash_Qtr01$ACC_TIME,":",fixed=TRUE)]
+dt$ACC_DATE<-NULL
+dt$ACC_TIME<-NULL
+
+#-----------Drop --------------------------------------------------------------
+rm(Crash_Qtr01);rm(Crash_Qtr02);rm(Crash_Qtr03);rm(Crash_Qtr04)
+#------------------------------------------------------------------------------
+#-------------------------combining dataset------------------------------------
+Crash01 <- rbind(dt,dt1)
+Crash02 <- rbind(Crash01,dt2)
+Crash03 <- rbind(Crash02,dt3)
+Crash2016<- Crash03
+rm(Crash01);rm(Crash02);rm(Crash03);
+#---------------------------------data type format-----------------------------
+Crash2016$acc_day<-as.numeric(Crash2016$acc_day)
+Crash2016$acc_month<-as.numeric(Crash2016$acc_month)
+Crash2016$acc_hour<-as.numeric(Crash2016$acc_hour)
+Crash2016$acc_min<-as.numeric(Crash2016$acc_min)
+Crash2016$acc_sec<-as.numeric(Crash2016$acc_sec)
+```
+
+## Merging Person Data:
+- Firstly, calculating the Age of the person at the time of accident by subtracting Year of Birth from 2016. But it cannot be done directly as the year in DOB was in YY format, hence it was calculated as AGE = 100-(YY)+16 assuming no one is super human with age>100 and driving.
+- Age of person was calculated to generate a Hypothesis that the age group 16-20 are more likely to accident as they are learners and probably Young Energetic Blood.
+```{r,eval=FALSE}
+#------------calculating age of driver for quarter 1--------------------------------------------
+require(data.table)
+dtPerson=as.data.table(PERSON)
+dtPerson[,c("bDay","bMonth", "bYear") := tstrsplit(PERSON$DATE_OF_BIRTH,"-",fixed=TRUE)]
+dtPerson$bYear<-as.numeric(dtPerson$bYear)
+dtPerson$Age <- (100- dtPerson$bYear)+16
+```
+- Similarlry calculating for all quarters
+- Reading Circum_Person file for all quarter and simultaneously merging with Person file.
+```{r,eval=FALSE}
+# importing file for all quarters
+CIRCUM_PERSON <- read_excel("crashQtr1/CIRCUM_PERSON.xlsx")
+# Merging files of Person and Circum_Person
+mergePerson<- sqldf("select * from dtPerson inner join CIRCUM_PERSON using (REPORT_NO,PERSON_ID)")
+# repeating above steps for all quarters
+```
+- Then, merged file for all quarters, now, we will append into a single file Person2016.csv
+```{r,eval=FALSE}
+#-----------------------------append into single file-----------------------------------
+p1 <- rbind(mergePerson,mergePerson2)
+p2<- rbind(p1,mergePerson3)
+Person2016<- rbind(p2,mergePerson4)
+write.csv(Person2016,"Person2016.csv")
+#-----------------------------drop------------------------------------------------------
+rm(p1);rm(p2);rm(PERSON);rm(PERSON2);rm(PERSON4);rm(PERSON3)
+rm(CIRCUM_PERSON);rm(PERSON_CIRUM);rm(dtPerson)
+```
+
+## Merging Road Data:
+- importing Circum_Road data for all quarters and deleting Vehicle_ID and Person_ID as it is NULL
+```{r,eval=FALSE}
+#------------qtr1--------------------------------------------
+CIRCUM_ROAD <- read_excel("crashQtr1/CIRCUM_ROAD.xlsx")
+CIRCUM_ROAD$VEHICLE_ID<-NULL
+CIRCUM_ROAD$PERSON_ID<-NULL
+road1<-CIRCUM_ROAD
+
+#------------qtr2--------------------------------------------
+CIRCUM_ROAD <- read_excel("crashQtr2/CIRCUM_ROAD.xlsx")
+CIRCUM_ROAD$VEHICLE_ID<-NULL
+CIRCUM_ROAD$PERSON_ID<-NULL
+road2<-CIRCUM_ROAD
+
+#------------qtr3--------------------------------------------
+CIRCUM_ROAD <- read_excel("crashQtr3/CIRCUM_ROAD.xlsx")
+CIRCUM_ROAD$VEHICLE_ID<-NULL
+CIRCUM_ROAD$PERSON_ID<-NULL
+road3<-CIRCUM_ROAD
+
+#------------qtr4--------------------------------------------
+CIRCUM_ROAD <- read_excel("crashQtr4/ROAD_CIRCUM.xlsx")
+CIRCUM_ROAD$VEHICLE_ID<-NULL
+CIRCUM_ROAD$PERSON_ID<-NULL
+road4<-CIRCUM_ROAD
+```
+- Appending data for all quarter as Road2016
+```{r,eval=FALSE}
+#-----------------------------append into single file-----------------------------------
+#-------------append all qtr--------------------
+r1<- rbind(road1,road2)
+r2 <- rbind(r1,road3)
+Road2016 <- rbind(r2,road4)
+#--------------DROP-----------------------------
+rm(r1);rm(r2);rm(road1);rm(road2);rm(road3);rm(road4)
+```
+## Merging Weather Data:
+- importing Circum_Weather data for all quarters and deleting Vehicle_ID and Person_ID as it is NULL, also deleting Contrib_Type as it has only single value.
+```{r,eval=FALSE}
+#----------------------------------------------qtr1--------------------------------------
+CIRCUM_WEATHER <- read_excel("crashQtr1/CIRCUM_WEATHER.xlsx")
+CIRCUM_WEATHER$CONTRIB_TYPE <-NULL
+CIRCUM_WEATHER$VEHICLE_ID <-NULL
+CIRCUM_WEATHER$PERSON_ID <-NULL
+weather1 <- CIRCUM_WEATHER
+#----------------------------------------------qtr2--------------------------------------
+CIRCUM_WEATHER <- read_excel("crashQtr2/CIRCUM_WEATHER.xlsx")
+CIRCUM_WEATHER$CONTRIB_TYPE <-NULL
+CIRCUM_WEATHER$VEHICLE_ID <-NULL
+CIRCUM_WEATHER$PERSON_ID <-NULL
+weather2 <- CIRCUM_WEATHER
+#----------------------------------------------qtr3--------------------------------------
+CIRCUM_WEATHER <- read_excel("crashQtr3/CIRCUM_WEATHER.xlsx")
+CIRCUM_WEATHER$CONTRIB_TYPE <-NULL
+CIRCUM_WEATHER$VEHICLE_ID <-NULL
+CIRCUM_WEATHER$PERSON_ID <-NULL
+weather3 <- CIRCUM_WEATHER
+#----------------------------------------------qtr4--------------------------------------
+CIRCUM_WEATHER <- read_excel("crashQtr4/WEATHER_CIRCUM.xlsx")
+CIRCUM_WEATHER$CONTRIB_TYPE <-NULL
+CIRCUM_WEATHER$VEHICLE_ID <-NULL
+CIRCUM_WEATHER$PERSON_ID <-NULL
+weather4 <- CIRCUM_WEATHER
+```
+- Appending data for all quarter as Road2016
+```{r,eval=FALSE}
+#-----------------------------append into single file-----------------------------------
+#-------------append all qtr--------------------
+w1<-rbind(weather1,weather2)
+w2 <- rbind(w1,weather3)
+Weather2016 <- rbind(w2,weather4)
+#----------------DROP---------------------------
+rm(w1);rm(w2);rm(weather1);rm(weather2);rm(weather3);rm(weather4)
+```
+
+## Complete Dataset for year 2016
+- Merging all parts of the dataset into a single dataset as Complete2016.csv.
+- All data set was checked for unique REPORT_NO values.
+- Merging is done using SQLDF package in R which allows to write SQL query for JOIN (Inner Join in this case)
+```{r,eval=FALSE}
+#-----------------------------Merging Person and Vehicle Dataset-----------------------------------
+
+final1 <- sqldf("select * from Person2016 inner join Vehicle2016 using (REPORT_NO,VEHICLE_ID)")
+write.csv(final1,"MergedPersonVehicle2016.csv")
+#----------making unique report no---------------
+MergedPersonVehicle2016 <- MergedPersonVehicle2016[!duplicated(MergedPersonVehicle2016$REPORT_NO),]
+#---------------------------------------------
+```
+- There were some type errors and were solved changing the data type of that particular attribute
+```{r,eval=FALSE}
+#---------------------Type conversion--------------------
+Crash2016$ACC_DATE <- as.character(Crash2016$ACC_DATE)
+Crash2016$ACC_TIME <- as.character(Crash2016$ACC_TIME)
+#--------------------------------------------------------
+```
+- Now, merging the previous file with Crash2016, Road2016 and Weather2016 dataset
+```{r,eval=FALSE}
+#----------------merging Crash2016----------------------------------------------------------------
+final2 <- sqldf("select * from Crash2016 inner join MergedPersonVehicle2016 using (REPORT_NO)")
+#----------------merging Road2016-----------------------------------------------------------------
+final3 <- sqldf("select * from Road2016 inner join final2 using (REPORT_NO)")
+#----------------merging Weather2016--------------------------------------------------------------
+Complete2016 <- sqldf("select * from Weather2016 inner join final3 using (REPORT_NO)")
+
+#----------------DROP-----------------------------------------------------------------------------
+rm(final1);rm(final2);rm(final3)
+
+#------------------check Unique------------------------------------------------------------------
+Complete2016<-Complete2016[!duplicated(Complete2016$REPORT_NO),]
+
+```
+## Data Cleaning and Formating
+- Replacing NA's in Driver's Age by median (here mean was not selected as there may be any outliers)
+- Writing a function to calculate median from the rest of data (not considering NA's), then, replacing the value of
+  NA's by the median value.
+- There are some outliers (Super Humans) in data setwith age group 0-5 and 110 - 116 as Drivers driving cars.
+```{r,eval=FALSE}
+#---------------------Function to calculate Median-------------------------------
+tempMedian<-function(x) {
+  median(x[which(!is.na(x))])
+}
+#------------------type conversion check-----------------------------------------
+Complete2016$Age<-as.numeric(Complete2016$Age)
+Complete2016$Age[is.na(Complete2016$Age)]<-ceiling(tempMedian(Complete2016$Age))
+#--------------------------------------------------------------------------------
+```
+- Calculating Vehicle's Age at the time of crash by subtracting the model make year from the crash year.
+- Assumption:
+<tab> - Vehicle make in no less than year=1900 (very less #)
+<tab> - Vehicle make in no more than year=2016 (as crash date is for 2016) ~ assumed as outliers
+<tab> - cleaned by replacing all values less than 1900 by 1900 and all values greater than 2016 (practically not possible) as 2016.
+
+```{r,eval=FALSE}
+#------------------cleaning------------------------------------------------------------
+Complete2016_v1$VEH_YEAR[Complete2016_v1$VEH_YEAR < 1900]<- 1900
+#------------------type conversion check-----------------------------------------------
+Complete2016_v1$acc_year <- as.numeric(Complete2016_v1$acc_year)
+Complete2016_v1$VEH_YEAR<- as.numeric(Complete2016_v1$VEH_YEAR)
+#--------------derive vehicle age------------------------------------------------------
+Complete2016_v1$VehicleAge <- (Complete2016_v1$acc_year - Complete2016_v1$VEH_YEAR)
+Complete2016_v1$VehicleAge[Complete2016_v1$VehicleAge < 0]<-0 
+```
+- Modifying value of Report_type with its substring
+```{r,eval=FALSE}
+#-------------------------------------------Backup------------------------------------------------------------
+Complete2016_v1 <- Complete2016
+#-------------------------------------------report type modification-------------------------------------------
+Complete2016_v1$REPORT_TYPE[Complete2016_v1$REPORT_TYPE == 'Property Damage Crash'] <- 'Damage'
+Complete2016_v1$REPORT_TYPE[Complete2016_v1$REPORT_TYPE == 'Crash Injury'] <- 'Injury'
+Complete2016_v1$REPORT_TYPE[Complete2016_v1$REPORT_TYPE == 'Injury Crash'] <- 'Injury'
+Complete2016_v1$REPORT_TYPE[Complete2016_v1$REPORT_TYPE == 'Fatal Crash'] <- 'Fatal'
+#--------------------------------------------------------------------------------------------------------------
+```
+- Replacing NA's in Distance attribute with the mean of the remaining values with help of tempMean funtion
+```{r,eval=FALSE}
+#---------------------adding mean to distances-----------------------------------------------------------------
+tempMean<-function(x) {
+  mean(x[which(!is.na(x))])
+}
+Complete2016_v1$DISTANCE[is.na(Complete2016_v1$DISTANCE)]<-ceiling(tempMean(Complete2016_v1$DISTANCE))
+```
+## Maryland Road Map Dataset
+- Merging Maryland road map dataset with Complete2016 dataset
+```{r,eval=FALSE}
+mergeMarylandCrash<- sqldf("select * from Complete2016_v1 inner join Maryland using (RTE_NO,COUNTY_NO)")
+mergeMarylandCrash<-mergeMarylandCrash[!duplicated(mergeMarylandCrash$REPORT_NO),]
+```
+- Deleting attributes with unique ID except Report_NO
+- Deleting all Annotation in Maryland road map
+- Deleting date and time as we have derived other attribute from it.
+- Deleting some attributes which had NA's more than 70%, also deleting some attributes.
+
+```{r,eval=FALSE}
+#quick snapshot of removing some attributes
+#-----------------------Cleaning----------------------
+mergeMarylandCrash[,151:178]<-NULL #all annotations
+mergeMarylandCrash[,147:151]<-NULL
+mergeMarylandCrash$MUNI_CODE<-NULL
+mergeMarylandCrash$LANE_CODE<-NULL
+mergeMarylandCrash$acc_year<-NULL
+mergeMarylandCrash$acc_sec<-NULL
+```
+- Replacing Na's (if found) in Maryland Road Map attributes (continuous values) by mean using tempMean function.
+- Applied function to all attributes with continuous values and if any NA's it got replaced.
+```{r,eval=FALSE}
+#--------------------------------------AADT---------------------------------------------------------------
+mergeMarylandCrash$AADT_2007[is.na(mergeMarylandCrash$AADT_2007)]<-tempMean(mergeMarylandCrash$AADT_2007)
+mergeMarylandCrash$AADT_2008[is.na(mergeMarylandCrash$AADT_2008)]<-tempMean(mergeMarylandCrash$AADT_2008)
+mergeMarylandCrash$AADT_2009[is.na(mergeMarylandCrash$AADT_2009)]<-tempMean(mergeMarylandCrash$AADT_2009)
+mergeMarylandCrash$AADT_2010[is.na(mergeMarylandCrash$AADT_2010)]<-tempMean(mergeMarylandCrash$AADT_2010)
+mergeMarylandCrash$AADT_2011[is.na(mergeMarylandCrash$AADT_2011)]<-tempMean(mergeMarylandCrash$AADT_2011)
+mergeMarylandCrash$AADT_2012[is.na(mergeMarylandCrash$AADT_2012)]<-tempMean(mergeMarylandCrash$AADT_2012)
+mergeMarylandCrash$AADT_2013[is.na(mergeMarylandCrash$AADT_2013)]<-tempMean(mergeMarylandCrash$AADT_2013)
+mergeMarylandCrash$AADT_2014[is.na(mergeMarylandCrash$AADT_2014)]<-tempMean(mergeMarylandCrash$AADT_2014)
+mergeMarylandCrash$AADT_2015[is.na(mergeMarylandCrash$AADT_2015)]<-tempMean(mergeMarylandCrash$AADT_2015)
+mergeMarylandCrash$AADT[is.na(mergeMarylandCrash$AADT)]<-tempMean(mergeMarylandCrash$AADT)
+
+#--------------------------------------AAWDT---------------------------------------------------------------
+mergeMarylandCrash$AAWDT_2007[is.na(mergeMarylandCrash$AAWDT_2007)]<-tempMean(mergeMarylandCrash$AAWDT_2007)
+mergeMarylandCrash$AAWDT_2008[is.na(mergeMarylandCrash$AAWDT_2008)]<-tempMean(mergeMarylandCrash$AAWDT_2008)
+mergeMarylandCrash$AAWDT_2009[is.na(mergeMarylandCrash$AAWDT_2009)]<-tempMean(mergeMarylandCrash$AAWDT_2009)
+mergeMarylandCrash$AAWDT_2010[is.na(mergeMarylandCrash$AAWDT_2010)]<-tempMean(mergeMarylandCrash$AAWDT_2010)
+mergeMarylandCrash$AAWDT_2011[is.na(mergeMarylandCrash$AAWDT_2011)]<-tempMean(mergeMarylandCrash$AAWDT_2011)
+mergeMarylandCrash$AAWDT_2012[is.na(mergeMarylandCrash$AAWDT_2012)]<-tempMean(mergeMarylandCrash$AAWDT_2012)
+mergeMarylandCrash$AAWDT_2013[is.na(mergeMarylandCrash$AAWDT_2013)]<-tempMean(mergeMarylandCrash$AAWDT_2013)
+mergeMarylandCrash$AAWDT_2014[is.na(mergeMarylandCrash$AAWDT_2014)]<-tempMean(mergeMarylandCrash$AAWDT_2014)
+mergeMarylandCrash$AAWDT_2015[is.na(mergeMarylandCrash$AAWDT_2015)]<-tempMean(mergeMarylandCrash$AAWDT_2015)
+mergeMarylandCrash$AAWDT[is.na(mergeMarylandCrash$AAWDT)]<-tempMean(mergeMarylandCrash$AAWDT)
+
+#--------------------------------------------------------------------------------------------------------------------
+mergeMarylandCrash$K_FACTOR[is.na(mergeMarylandCrash$K_FACTOR)]<-tempMean(mergeMarylandCrash$K_FACTOR)
+mergeMarylandCrash$D_FACTOR[is.na(mergeMarylandCrash$D_FACTOR)]<-tempMean(mergeMarylandCrash$D_FACTOR)
+mergeMarylandCrash$NORTH_EAST_SPLIT[is.na(mergeMarylandCrash$NORTH_EAST_SPLIT)]<-tempMean(mergeMarylandCrash$NORTH_EAST_SPLIT)
+mergeMarylandCrash$SOUTH_WEST_SPLIT[is.na(mergeMarylandCrash$SOUTH_WEST_SPLIT)]<-tempMean(mergeMarylandCrash$SOUTH_WEST_SPLIT)
+#--------------------------------------------------------------------------------------------------------------------
+mergeMarylandCrash$MOTORCYCLE_AADT[is.na(mergeMarylandCrash$MOTORCYCLE_AADT)]<-tempMean(mergeMarylandCrash$MOTORCYCLE_AADT)
+mergeMarylandCrash$CAR_AADT[is.na(mergeMarylandCrash$CAR_AADT)]<-tempMean(mergeMarylandCrash$CAR_AADT)
+mergeMarylandCrash$LIGHT_TRUCK_AADT[is.na(mergeMarylandCrash$LIGHT_TRUCK_AADT)]<-tempMean(mergeMarylandCrash$LIGHT_TRUCK_AADT)
+mergeMarylandCrash$BUS_AADT[is.na(mergeMarylandCrash$BUS_AADT)]<-tempMean(mergeMarylandCrash$BUS_AADT)
+mergeMarylandCrash$SINGLE_UNIT_AADT[is.na(mergeMarylandCrash$SINGLE_UNIT_AADT)]<-tempMean(mergeMarylandCrash$SINGLE_UNIT_AADT)
+mergeMarylandCrash$COMBINATION_UNIT_AADT[is.na(mergeMarylandCrash$COMBINATION_UNIT_AADT)]<-tempMean(mergeMarylandCrash$COMBINATION_UNIT_AADT)
+#----------------------------------------------------------------------------------------------------------------------
+```
+- Data type of MarylandCrash dataset
+```{r,eval=FALSE}
+#---------------Type conversion check-------------------------------------------
+Maryland2016_v1[,2:26] <- sapply(Maryland2016_v1[,2:26],as.numeric)
+Maryland2016_v1[,40:77] <- sapply(Maryland2016_v1[,40:77],as.numeric)
+#---------------Report type factoring------------------------------------------
+Maryland2016_v1$REPORT_TYPE[Maryland2016_v1$REPORT_TYPE == 'Damage'] <- 0
+Maryland2016_v1$REPORT_TYPE[Maryland2016_v1$REPORT_TYPE == 'Injury'] <- 1
+Maryland2016_v1$REPORT_TYPE[Maryland2016_v1$REPORT_TYPE == 'Fatal'] <- 2
+Maryland2016_v1$REPORT_TYPE<-as.numeric(Maryland2016_v1$REPORT_TYPE)
+```
+
+## Creating Negative Samples
+- Creating a time series data for year 2016 and remove all the timestamp for accident record.
+```{r,eval=FALSE}
+listUnique <- unique(final4[c("acc_month","acc_day","acc_hour","acc_min")])
+listUnique<- listUnique[order(listUnique[,1],listUnique[,2],listUnique[,3],listUnique[,4]),]
+dftemp <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("month", "day", "hour","min")
+colnames(dftemp) <- x
+ctrmonth<- c(1:9)
+ctrday<- c(1:31)
+ctrhour<- c(0:23)
+for(i in 1:9){
+  for (j in 1:31) {
+    for (k in 0:23) {
+      for (l in 0:59) {
+        dftemp[nrow(dftemp) + 1,] = c(i,j,k,l)
+      }
+      
+    }
+    
+  }
+}
+differenceList <- sqldf('SELECT * FROM dftemp EXCEPT SELECT * FROM listUnique')
+```
+- Ordering the data 
+- To get Spatial features, creating all combination of closely related spatial data (modifying if required)
+```{r,eval=FALSE}
+final4 <- read_csv("forecastAccident_v1.csv")
+rndSamples<- read_csv("randomNegativeTimeStampToAdd.csv")
+rndSamples<-as.data.frame(rndSamples)
+rndSamples <- rndSamples[order(rndSamples[,1],rndSamples[,2],rndSamples[,3],rndSamples[,4]),]
+newFeatures3<- sqldf("select * from final4, rndSamples where final4.acc_month = rndSamples.acc_month AND final4.acc_day = rndSamples.acc_day AND final4.acc_hour = rndSamples.acc_hour")
+```
+- Creating time stamp, removing if any duplicate timestamp and random selection of data.
+```{r,eval=FALSE}
+NegativeSamples_V3 <- read_csv("NegativeSamples_V3.csv")
+final5 <- read_csv("timeSeriesFormatAccident_V1.csv")
+NegativeSamples_V3$timestamp <- as.POSIXct(NegativeSamples_V3$timestamp, format = "%m-%d-%Y %H:%M:%S", tz = "UTC")
+NegativeSamples_V5<- NegativeSamples_V3[!duplicated(NegativeSamples_V3$timestamp),]
+NegativeSamples_V5<- NegativeSamples_V5[complete.cases(NegativeSamples_V5),]
+NegativeSamples_V5$REPORT_TYPE<-"Safe"
+NegativeSamples_V5<- NegativeSamples_V5[sample(nrow(NegativeSamples_V5), 51000), ]
+```
+- Merge Negative samples with Positive samples and save data.
+```{r,eval=FALSE}
+final6 <- rbind(final5,NegativeSamples_V5)
+final6<- final6[!duplicated(final6$timestamp),]
+final6<- final6[complete.cases(final6),]
+write.csv(final6,"PositiveNegativeSampleAccData2016_V1.csv",row.names = FALSE)
+```

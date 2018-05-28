@@ -1,0 +1,245 @@
+---
+title: "Maryland Road Crash Analysis: Aggregation"
+author: "Arpit Jayesh Vora"
+date: "21 April 2018"
+output: html_document
+---
+
+## Aggregation
+- Aggregation was important in this case to cluster the closely related (similar attibute) and remove redundant attributes. This will be beneficial in pre - processing stage which is done in Python.
+- Aggregation is done based on related attribute values (REF: Data Dictionary) and also if the value significance is low (very less #records)
+- Assumption: All NA's were replaced with code '88' = 'Others'
+- Aggregation of Weather Contrib Type
+
+```{r,eval=FALSE}
+#--------------------------all contrib type aggregation-------------------------------------
+table(Complete2016_v1$Weather_CONTRIB_CODE)
+Complete2016_v1$Weather_CONTRIB_CODE[Complete2016_v1$Weather_CONTRIB_CODE == 44] <- 43
+Complete2016_v1$Weather_CONTRIB_CODE[Complete2016_v1$Weather_CONTRIB_CODE == 45] <- 42
+Complete2016_v1$Weather_CONTRIB_CODE[Complete2016_v1$Weather_CONTRIB_CODE == 47] <- 41
+Complete2016_v1$Weather_CONTRIB_CODE[Complete2016_v1$Weather_CONTRIB_CODE == 82.88] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$Weather_CONTRIB_CODE[is.na(Complete2016_v1$Weather_CONTRIB_CODE)]<-88
+```
+- Weather Code aggregation (numeric values are the code for certain values)
+```{r,eval=FALSE}
+#--------------------------weather code aggregation-----------------------------------------
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 10.04] <- 5
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 11.88] <- 5
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 12.04] <- 5
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 7.01] <- 3
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 8.04] <- 3
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 9.04] <- 3
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 99] <- 88
+Complete2016_v1$WEATHER_CODE[Complete2016_v1$WEATHER_CODE == 6.01] <- 6
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$WEATHER_CODE[is.na(Complete2016_v1$WEATHER_CODE)]<-88
+```
+- Surf Condition Code aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Surf condition code--------------------------------
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 4] <- 3
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 99] <- 88
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 5] <- 88
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 6.03] <- 88
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 7.01] <- 88
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 8.05] <- 88
+Complete2016_v1$SURF_COND_CODE[Complete2016_v1$SURF_COND_CODE == 9.88] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$SURF_COND_CODE[is.na(Complete2016_v1$SURF_COND_CODE)]<-88
+```
+- Road Condition Code aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation road condition code--------------------------------
+for (i in 3:8) {
+  Complete2016_v1$RD_COND_CODE[Complete2016_v1$RD_COND_CODE == i] <- 2
+}
+Complete2016_v1$RD_COND_CODE[Complete2016_v1$RD_COND_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$RD_COND_CODE[is.na(Complete2016_v1$RD_COND_CODE)]<-88
+```
+- Injury Severe Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation injury severe code--------------------------------
+for (i in 3:5) {
+  Complete2016_v1$INJ_SEVER_CODE[Complete2016_v1$INJ_SEVER_CODE == i] <- 2
+}
+Complete2016_v1$INJ_SEVER_CODE[Complete2016_v1$INJ_SEVER_CODE == 1] <- 0
+Complete2016_v1$INJ_SEVER_CODE[Complete2016_v1$INJ_SEVER_CODE == 2] <- 1
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$INJ_SEVER_CODE[is.na(Complete2016_v1$INJ_SEVER_CODE)]<-88
+```
+- Equip Prob Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation equip prob code-----------------------------------
+Complete2016_v1$EQUIP_PROB_CODE[Complete2016_v1$EQUIP_PROB_CODE == 11] <- 2
+Complete2016_v1$EQUIP_PROB_CODE[Complete2016_v1$EQUIP_PROB_CODE == 13] <- 2
+Complete2016_v1$EQUIP_PROB_CODE[Complete2016_v1$EQUIP_PROB_CODE == 31] <- 2
+Complete2016_v1$EQUIP_PROB_CODE[Complete2016_v1$EQUIP_PROB_CODE == 42] <- 2
+for (i in 44:47) {
+  Complete2016_v1$EQUIP_PROB_CODE[Complete2016_v1$EQUIP_PROB_CODE == i] <- 2
+}
+Complete2016_v1$EQUIP_PROB_CODE[Complete2016_v1$EQUIP_PROB_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$EQUIP_PROB_CODE[is.na(Complete2016_v1$EQUIP_PROB_CODE)]<-88
+```
+- Safety Equi Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation safety equip code-----------------------------------
+Complete2016_v1$SAF_EQUIP_CODE[Complete2016_v1$SAF_EQUIP_CODE == 12] <- 11
+Complete2016_v1$SAF_EQUIP_CODE[Complete2016_v1$SAF_EQUIP_CODE == 13] <- 11
+Complete2016_v1$SAF_EQUIP_CODE[Complete2016_v1$SAF_EQUIP_CODE == 22] <- 21
+Complete2016_v1$SAF_EQUIP_CODE[Complete2016_v1$SAF_EQUIP_CODE == 23] <- 21
+Complete2016_v1$SAF_EQUIP_CODE[Complete2016_v1$SAF_EQUIP_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$SAF_EQUIP_CODE[is.na(Complete2016_v1$SAF_EQUIP_CODE)]<-88
+```
+- Eject Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Eject code-----------------------------------
+Complete2016_v1$EJECT_CODE[Complete2016_v1$EJECT_CODE == 3] <- 2
+Complete2016_v1$EJECT_CODE[Complete2016_v1$EJECT_CODE == 4] <- 2
+Complete2016_v1$EJECT_CODE[Complete2016_v1$EJECT_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$EJECT_CODE[is.na(Complete2016_v1$EJECT_CODE)]<-88
+```
+- Person Condition Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Person Condition code-----------------------------------
+for (i in 3:8) {
+  Complete2016_v1$CONDITION_CODE[Complete2016_v1$CONDITION_CODE == i] <- 2
+}
+Complete2016_v1$CONDITION_CODE[Complete2016_v1$CONDITION_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$CONDITION_CODE[is.na(Complete2016_v1$CONDITION_CODE)]<-88
+```
+- Person Contrib Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Person contrib code-----------------------------------
+for (i in 2:4) {
+  Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == i] <- 1
+}
+for (i in 8:17) {
+  Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == i] <- 8
+}
+for (i in 20:28) {
+  Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == i] <- 20
+}
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 70.88] <- 20
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 73.88] <- 20
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 74.88] <- 20
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 75.88] <- 20
+
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 29] <- 88
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 38.88] <- 88
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 39.88] <- 88
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 40.88] <- 88
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 60.88] <- 88
+Complete2016_v1$Person_CONTRIB_CODE[Complete2016_v1$Person_CONTRIB_CODE == 68.88] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$Person_CONTRIB_CODE[is.na(Complete2016_v1$Person_CONTRIB_CODE)]<-88
+```
+- Damage Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Damage code-----------------------------------
+Complete2016_v1$DAMAGE_CODE[Complete2016_v1$DAMAGE_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$DAMAGE_CODE[is.na(Complete2016_v1$DAMAGE_CODE)]<-88
+```
+- Light Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Light code-----------------------------------
+Complete2016_v1$LIGHT_CODE[Complete2016_v1$LIGHT_CODE == 5.02] <- 5
+Complete2016_v1$LIGHT_CODE[Complete2016_v1$LIGHT_CODE == 6.02] <- 6
+Complete2016_v1$LIGHT_CODE[Complete2016_v1$LIGHT_CODE == 7.88] <- 7
+Complete2016_v1$LIGHT_CODE[Complete2016_v1$LIGHT_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$LIGHT_CODE[is.na(Complete2016_v1$LIGHT_CODE)]<-88
+```
+- Junction Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Junction code-----------------------------------
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 5.01] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 3] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 6.01] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 7.01] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 8.04] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 9.04] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 10.04] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 11.04] <- 2
+Complete2016_v1$JUNCTION_CODE[Complete2016_v1$JUNCTION_CODE == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$JUNCTION_CODE[is.na(Complete2016_v1$JUNCTION_CODE)]<-88
+```
+- Harm Event Code #1 aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Harm Event code #1-----------------------------------
+for (i in 3:7) {
+  Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == i] <- 3
+}
+for (i in 11:15) {
+  Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == i] <- 11
+}
+for (i in 17:20) {
+  Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == i] <- 17
+}
+Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == 17] <- 88
+Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == 21.15] <- 88
+Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == 22.15] <- 88
+Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == 23.15] <- 88
+Complete2016_v1$HARM_EVENT_CODE1[Complete2016_v1$HARM_EVENT_CODE1 == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$HARM_EVENT_CODE1[is.na(Complete2016_v1$HARM_EVENT_CODE1)]<-88
+```
+- Harm Event Code #2 aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Harm Event code #2-----------------------------------
+for (i in 3:7) {
+  Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == i] <- 3
+}
+for (i in 11:15) {
+  Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == i] <- 11
+}
+for (i in 17:20) {
+  Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == i] <- 17
+}
+Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == 17] <- 88
+Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == 21.15] <- 88
+Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == 22.15] <- 88
+Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == 23.15] <- 88
+Complete2016_v1$HARM_EVENT_CODE2[Complete2016_v1$HARM_EVENT_CODE2 == 99] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$HARM_EVENT_CODE2[is.na(Complete2016_v1$HARM_EVENT_CODE2)]<-88
+```
+- Body Type Code Aggregation
+```{r,eval=FALSE}
+#-----------------------------Aggregation Body code-----------------------------------------
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 99] <- 88
+
+for (i in 13:18) {
+  Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == i] <- 13
+}
+for (i in 3:12) {
+  Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == i] <- 3
+}
+for (i in 19:22) {
+  Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == i] <- 3
+}
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 22.05] <- 3
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 23.08] <- 3
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 24.88] <- 3
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 25.88] <- 3
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 26.88] <- 3
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 27.88] <- 3
+Complete2016_v1$BODY_TYPE_CODE[Complete2016_v1$BODY_TYPE_CODE == 28] <- 3
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$BODY_TYPE_CODE[is.na(Complete2016_v1$BODY_TYPE_CODE)]<-88
+```
+- Area Damage Code
+```{r,eval=FALSE}
+#-----------------------------Aggregation Area Damage code-----------------------------------
+Complete2016_v1$AREA_DAMAGED_CODE_IMP1[Complete2016_v1$AREA_DAMAGED_CODE_IMP1 == 99] <- 88
+Complete2016_v1$AREA_DAMAGED_CODE_IMP1[Complete2016_v1$AREA_DAMAGED_CODE_IMP1 == 98] <- 88
+#--------------------------Replacing NA's---------------------------------------------------
+Complete2016_v1$AREA_DAMAGED_CODE_IMP1[is.na(Complete2016_v1$AREA_DAMAGED_CODE_IMP1)]<-88
+```
